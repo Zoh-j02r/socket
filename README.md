@@ -1,6 +1,6 @@
-### Whatsapp Premium 
+### Socket 
 
-This is a simple client-server communcation application using C sockets, it was made for communcation with ONLY 2 devices in mind (pointless trackers and privacy disturbing functionality not yet implemented).
+This is a simple client-server communcation application using C sockets, it was made for communcation with ONLY 2 devices in mind.
 ### How to build
 ```
 $ meson setup build
