@@ -73,9 +73,9 @@ void *first_thread(void *arg) {
 			socket_connect(&client1_fd, base);
         	}
 		// Add client name in brackets
-		sprintf(aux_buffer,"[%s] %s",base,buffer);
-		printf("[M] %s\n",aux_buffer);
-        	send(client2_fd, aux_buffer, strlen(aux_buffer), 0);
+		//sprintf(aux_buffer,"[%s] %s",base,buffer);
+		//printf("[M] %s\n",aux_buffer);
+		send(client2_fd, buffer, strlen(buffer), 0);
 		// Clear buffer and aux_buffer
 		memset(buffer, 0, sizeof(buffer));
 		memset(aux_buffer, 0, sizeof(aux_buffer));
@@ -95,9 +95,9 @@ void *second_thread(void *arg) {
         		printf("[I] Lost connection with %s\n",base);
 			socket_connect(&client2_fd, base);
         	}
-		sprintf(aux_buffer,"[%s] %s",base,buffer);
-		printf("[M] %s\n",aux_buffer);
-        	send(client1_fd, aux_buffer, strlen(aux_buffer), 0);
+		//sprintf(aux_buffer,"[%s] %s",base,buffer);
+		//printf("[M] %s\n",aux_buffer);
+        send(client1_fd, buffer, strlen(buffer), 0);
 		// Clear buffer and aux_buffer
 		memset(buffer, 0, sizeof(buffer));
 		memset(aux_buffer, 0, sizeof(aux_buffer));
