@@ -1,12 +1,12 @@
 ### Socket 
-
 This is a simple client-server communcation application using C sockets, it was made for communcation with ONLY 2 devices in mind.
+### Dependencies
+Make sure to have ncurses develoment files installed
 ### How to build
 ```
 $ meson setup build
 $ meson compile -C build
 ```
-
 ### How to use
 
 ```
