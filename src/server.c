@@ -1,6 +1,5 @@
 #include "util.h"
 
-
 struct sockaddr_in address;
 int addrlen = sizeof(address);
 int server_fd, client1_fd, client2_fd, valread;
@@ -53,27 +52,27 @@ void socket_connect(int *client, char *base)
 	{
 		memset(base, 0, MAX_CLIENT_NAME_SIZE * sizeof(char));
 		read(*client, base, 12);
-        	printf("[I] New client connected: [%s] %s:%d\n",base, inet_ntoa(address.sin_addr), ntohs(address.sin_port));
+        	printf("[I] New client connected: %s - %s:%d\n",base, inet_ntoa(address.sin_addr), ntohs(address.sin_port));
 	} 
 }
 
 void *first_thread(void *arg) {
 	char base[MAX_CLIENT_NAME_SIZE] = {0};
-    	char buffer[256] = {0};
-    	char aux_buffer[280] = {0};
+    char buffer[MAX_MESSAGE_SIZE] = {0};
+    char aux_buffer[MAX_MESSAGE_SIZE + MAX_CLIENT_NAME_SIZE + 3] = {0};
 	int valread;
 	socket_connect(&client1_fd, base);
 	while(1)
 	{
-        	valread = read(client1_fd, buffer, 256);
-        	if (valread == 0) 
+        valread = read(client1_fd, buffer, MAX_MESSAGE_SIZE);
+        if (valread == 0) 
 		{
-        		printf("[I] Lost connection with %s\n",base);
+        	printf("[I] Lost connection with %s\n",base);
 			// If a client disconnects wait for a new client connection to take its place
 			socket_connect(&client1_fd, base);
-        	}
+        }
 		// Add client name in brackets
-		sprintf(aux_buffer,"[%s] %s",base,buffer);
+		sprintf(aux_buffer,"%s: %s",base,buffer);
 		printf("[M] %s\n",aux_buffer);
         	send(client2_fd, aux_buffer, strlen(aux_buffer), 0);
 		// Clear buffer and aux_buffer
@@ -85,19 +84,19 @@ void *first_thread(void *arg) {
 
 void *second_thread(void *arg) {
 	char base[MAX_CLIENT_NAME_SIZE] = {0};
-    	char buffer[256] = {0};
-    	char aux_buffer[280] = {0};
+    	char buffer[MAX_MESSAGE_SIZE] = {0};
+    	char aux_buffer[MAX_CLIENT_NAME_SIZE + MAX_MESSAGE_SIZE + 3] = {0};
 	int valread;
 	socket_connect(&client2_fd, base);
 	while(1){
-        	valread = read(client2_fd, buffer, 256);
-        	if (valread == 0) {
-        		printf("[I] Lost connection with %s\n",base);
-			socket_connect(&client2_fd, base);
-        	}
-		sprintf(aux_buffer,"[%s] %s",base,buffer);
+    	valread = read(client2_fd, buffer, MAX_MESSAGE_SIZE);
+    	if (valread == 0) {
+    		printf("[I] Lost connection with %s\n",base);
+		socket_connect(&client2_fd, base);
+    	}
+		sprintf(aux_buffer,"%s: %s",base,buffer);
 		printf("[M] %s\n",aux_buffer);
-        	send(client1_fd, aux_buffer, strlen(aux_buffer), 0);
+        send(client1_fd, aux_buffer, strlen(aux_buffer), 0);
 		// Clear buffer and aux_buffer
 		memset(buffer, 0, sizeof(buffer));
 		memset(aux_buffer, 0, sizeof(aux_buffer));

@@ -6,4 +6,5 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
-#define MAX_CLIENT_NAME_SIZE 12
+#define MAX_CLIENT_NAME_SIZE 	12
+#define MAX_MESSAGE_SIZE 		152
