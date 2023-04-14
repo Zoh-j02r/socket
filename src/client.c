@@ -6,7 +6,7 @@ int16_t row, col, lok, msg = 0;
 int32_t sock_fd;
 char client[MAX_CLIENT_NAME_SIZE];
 
-char in_buffer[MAX_MESSAGE_SIZE] = {0};
+char in_buffer[MAX_MESSAGE_SIZE];
 
 WINDOW* chat_win; 
 WINDOW* input_win;
@@ -29,7 +29,6 @@ void socket_start(const char* address,const char* port,const char* name)
 	    printf("[E] Socket creation error \n");
 	    exit(-1);
 	}
-	
 	// Setup server address and port
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_port = htons(atoi(port));
@@ -50,7 +49,6 @@ void socket_start(const char* address,const char* port,const char* name)
 		printf("[E] Failed sending the client name to the server");
 	    exit(-1);
 	}
-	
 }
 
 void wait(int time_delay,WINDOW* input_win)
@@ -88,9 +86,9 @@ void* input_win_thread(void* arg)
     getmaxyx(stdscr, row, col);
 	if (col - 10 > MAX_MESSAGE_SIZE)
 	{
-	    	printf("[E] Your terminal size is to big \n");
-    		endwin();
-	    	exit(-1);
+    	printf("[E] Your terminal size is to big \n");
+		endwin();
+    	exit(-1);
 	}
 	chat_win  = newwin(row - 3, col - 2, 0, 1);
     input_win = newwin(3 , col - 2 , (row - 4) + 1 , 1);
@@ -127,12 +125,9 @@ void* input_win_thread(void* arg)
 		   		wrefresh(chat_win); 
 				msg = 0;
 			}
-			wait(1,input_win);
+			wait(90,input_win);
 			strncpy(in_buffer, buffer, sizeof(in_buffer) - 1);
 			in_buffer[sizeof(in_buffer) - 1] = '\0'; 
-    		wprintw(chat_win," %s: %s\n",client,in_buffer);
-			box(chat_win,0,0);
-			wrefresh(chat_win);
 			memset(buffer, 0, sizeof(buffer));
     		index = 0;
     	}
