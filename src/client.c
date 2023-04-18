@@ -4,6 +4,7 @@
 
 #define GREEN_PAIR 1
 #define RED_PAIR 2
+#define BLACK_PAIR 3
 
 int16_t row, col, lok, msg = 0;
 int32_t sock_fd;
@@ -46,16 +47,18 @@ void socket_start(const char* address,const char* port,const char* name)
 	if (connect(sock_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
 	    
 		move(0, 0);
-		//wattroff(input_win,COLOR_PAIR(GREEN_PAIR));
-		//wattroff(chat_win,COLOR_PAIR(GREEN_PAIR));
 		endwin();
 		//printf("[E] Connection Failed \n");
-		printf("[E] Impossivel criar novo Link, tente novamente");
+		printf("[E] Impossivel achar novo Link, tente novamente \n");
+		printf("\n");
 	    exit(-1);
 	}
 	
 	if (send(sock_fd, name, strlen(name), 0) == -1) {
-		//printf("[E] Failed sending the client name to the server");
+		move(0, 0);
+		endwin();
+		printf("[E] Failed sending the client name to the server");
+		printf("\n");
 	    exit(-1);
 	}
 }
@@ -69,6 +72,7 @@ void wait(int time_delay,WINDOW* input_win,int color)
     wmove(win, 1, 0);
 	for (int16_t i = 0 ; i < ( col - 4 ) ; i++ )
 	{
+
     	wmove(win, 1, 1 + i);
 		waddch(win, ACS_VLINE);
     	box(win, 0, 0);
@@ -79,7 +83,10 @@ void wait(int time_delay,WINDOW* input_win,int color)
     wclear(win);
     werase(win);
     wborder(input_win, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE,ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
-    mvwprintw(input_win, 0, 2, "Zen-Prompt");
+
+	wattron(input_win,COLOR_PAIR(BLACK_PAIR));
+    mvwprintw(input_win, 0, 2, "[Zen-Prompt]");	
+	wattron(input_win,COLOR_PAIR(GREEN_PAIR));
 	wmove(input_win, 1, 2);
 	wprintw(input_win, "> "); 
 	wrefresh(input_win);
@@ -96,6 +103,7 @@ void* input_win_thread(void* arg)
 
 	start_color();
 
+	init_pair(BLACK_PAIR, COLOR_WHITE, COLOR_BLACK);
 	init_pair(GREEN_PAIR, COLOR_GREEN, COLOR_BLACK);
 	init_pair(RED_PAIR, COLOR_RED, COLOR_BLACK);
 
@@ -123,7 +131,9 @@ void* input_win_thread(void* arg)
 	int16_t index = 0;
 
     wborder(input_win, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE,ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
-    mvwprintw(input_win, 0, 2, "Zen Prompt");
+	wattron(input_win,COLOR_PAIR(BLACK_PAIR));
+    mvwprintw(input_win, 0, 2, "[Zen Prompt]");
+	wattron(input_win,COLOR_PAIR(GREEN_PAIR));
 	wmove(input_win, 1, 2);
 	wprintw(input_win, "> ");
 	wrefresh(input_win);
@@ -135,6 +145,7 @@ void* input_win_thread(void* arg)
 		if (ch == '\n') 
     	{
 			lok = 1;
+			wait(2,input_win,GREEN_PAIR);
 			msg++;
 			if (msg > row - 6 )
 			{
@@ -144,7 +155,6 @@ void* input_win_thread(void* arg)
 		   		wrefresh(chat_win); 
 				msg = 0;
 			}
-			wait(3,input_win,GREEN_PAIR);
 			strncpy(in_buffer, buffer, sizeof(in_buffer) - 1);
 			in_buffer[sizeof(in_buffer) - 1] = '\0'; 
 			memset(buffer, 0, sizeof(buffer));
@@ -240,17 +250,17 @@ int main(int argc,const char* argv[])
 			else 
 			{
 				close(sock_fd);
-
-				wattron(input_win,COLOR_PAIR(RED_PAIR));
     			wborder(input_win, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE,ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
-    			mvwprintw(input_win, 0, 2, "Zen-Prompt");
+				wattron(input_win,COLOR_PAIR(BLACK_PAIR));
+    			mvwprintw(input_win, 0, 2, "[Zen-Prompt]");
+				wattron(input_win,COLOR_PAIR(GREEN_PAIR));
 				wmove(input_win, 1, 2);
-			    wprintw(input_win,"Link com a base perdida, tentando criar nova rota...");
+			    wprintw(chat_win," [E] Link principal instavel, tentando criar nova rota...");
+				box(chat_win,0,0);
+			    wrefresh(chat_win);
 				wrefresh(input_win);
 				sleep(3);
-				wait(5,input_win,RED_PAIR);
-				wattroff(input_win,COLOR_PAIR(RED_PAIR));
-				wattron(input_win,COLOR_PAIR(GREEN_PAIR));
+				wait(5,input_win,GREEN_PAIR);
 				socket_start(argv[1],argv[2],argv[3]);
 			}
 		}

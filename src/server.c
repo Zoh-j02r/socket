@@ -44,11 +44,6 @@ void socket_setup(int port)
 
 }
 
-void mission_begin()
-{
-
-}
-
 void *message_handler(void *arg)
 {
 	Client* client = (Client*) arg;
@@ -63,7 +58,13 @@ void *message_handler(void *arg)
 				{
 					for (int j = 0; j < max_number_clients - 1; j++)
 					{
-						sprintf(aux_buffer,"%s: %s",client[i].name,client[i].buffer);
+						if (client[i].buffer[0] == '[')
+						{
+						sprintf(aux_buffer,"%s",client[i].buffer);
+						} 
+						else {
+						sprintf(aux_buffer,"[M] %s: %s",client[i].name,client[i].buffer);
+						}
 						send(client[j].sock, aux_buffer, strlen(aux_buffer), 0);
 					}
 					printf("[M] %s\n",aux_buffer);
@@ -80,11 +81,14 @@ void *message_handler(void *arg)
 void *client_thread(void *arg) {
 	Client* client = (Client*) arg;
 	int16_t valread;
+	sleep(2);
+	sprintf(client->buffer,"[I] Hyperlink da base: %s encontrado",client->name);
 	while(1)
 	{
         valread = read(client->sock, client->buffer, MAX_MESSAGE_SIZE);
         if (valread == 0) 
 		{
+			sprintf(client->buffer,"[W] O Hyperlink da base: %s foi perdido",client->name);
         	printf("[I] Lost connection with %s\n", client->name);
 			break;
         }
