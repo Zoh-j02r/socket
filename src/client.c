@@ -2,6 +2,9 @@
 #include <stdint.h>
 #include <ncurses.h>
 
+#define GREEN_PAIR 1
+#define RED_PAIR 2
+
 int16_t row, col, lok, msg = 0;
 int32_t sock_fd;
 char client[MAX_CLIENT_NAME_SIZE];
@@ -41,21 +44,28 @@ void socket_start(const char* address,const char* port,const char* name)
 	
 	// Connect to server
 	if (connect(sock_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
-	    printf("[E] Connection Failed \n");
+	    
+		move(0, 0);
+		//wattroff(input_win,COLOR_PAIR(GREEN_PAIR));
+		//wattroff(chat_win,COLOR_PAIR(GREEN_PAIR));
+		endwin();
+		//printf("[E] Connection Failed \n");
+		printf("[E] Impossivel criar novo Link, tente novamente");
 	    exit(-1);
 	}
 	
 	if (send(sock_fd, name, strlen(name), 0) == -1) {
-		printf("[E] Failed sending the client name to the server");
+		//printf("[E] Failed sending the client name to the server");
 	    exit(-1);
 	}
 }
 
-void wait(int time_delay,WINDOW* input_win)
+void wait(int time_delay,WINDOW* input_win,int color)
 {
     wclear(input_win);
 	float tick = ((float)time_delay/(col - 4)) * 1000.0f;
     win = newwin(3 , col - 2 , (row - 4) + 1 , 1);
+	wattron(win,COLOR_PAIR(color));
     wmove(win, 1, 0);
 	for (int16_t i = 0 ; i < ( col - 4 ) ; i++ )
 	{
@@ -65,6 +75,7 @@ void wait(int time_delay,WINDOW* input_win)
 		wrefresh(win);
 		usleep(tick * 1000.0f);
 	}
+	wattroff(win,COLOR_PAIR(color));
     wclear(win);
     werase(win);
     wborder(input_win, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE,ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
@@ -76,22 +87,30 @@ void wait(int time_delay,WINDOW* input_win)
 
 void* input_win_thread(void* arg)
 {
-	char *client = (char *) arg; 
     initscr();
 	cbreak();
 	noecho();
 
     curs_set(0);
 
+
+	start_color();
+
+	init_pair(GREEN_PAIR, COLOR_GREEN, COLOR_BLACK);
+	init_pair(RED_PAIR, COLOR_RED, COLOR_BLACK);
+
+
     getmaxyx(stdscr, row, col);
 	if (col - 10 > MAX_MESSAGE_SIZE)
 	{
-    	printf("[E] Your terminal size is to big \n");
 		endwin();
+    	printf("[E] Your terminal size is to big \n");
     	exit(-1);
 	}
 	chat_win  = newwin(row - 3, col - 2, 0, 1);
     input_win = newwin(3 , col - 2 , (row - 4) + 1 , 1);
+	wattron(chat_win,COLOR_PAIR(GREEN_PAIR));
+	wattron(input_win,COLOR_PAIR(GREEN_PAIR));
 	wmove(chat_win, 0, 0); 
     box(chat_win, 0, 0);
 	wrefresh(chat_win); 
@@ -125,7 +144,7 @@ void* input_win_thread(void* arg)
 		   		wrefresh(chat_win); 
 				msg = 0;
 			}
-			wait(90,input_win);
+			wait(3,input_win,GREEN_PAIR);
 			strncpy(in_buffer, buffer, sizeof(in_buffer) - 1);
 			in_buffer[sizeof(in_buffer) - 1] = '\0'; 
 			memset(buffer, 0, sizeof(buffer));
@@ -178,7 +197,6 @@ void *send_message_thread(void *arg)
 	return NULL;
 }
 
-
 int main(int argc,const char* argv[])
 {	
 	check_args(argc);
@@ -219,8 +237,27 @@ int main(int argc,const char* argv[])
 				box(chat_win,0,0);
 			   	wrefresh(chat_win); 
 			}
+			else 
+			{
+				close(sock_fd);
+
+				wattron(input_win,COLOR_PAIR(RED_PAIR));
+    			wborder(input_win, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE,ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
+    			mvwprintw(input_win, 0, 2, "Zen-Prompt");
+				wmove(input_win, 1, 2);
+			    wprintw(input_win,"Link com a base perdida, tentando criar nova rota...");
+				wrefresh(input_win);
+				sleep(3);
+				wait(5,input_win,RED_PAIR);
+				wattroff(input_win,COLOR_PAIR(RED_PAIR));
+				wattron(input_win,COLOR_PAIR(GREEN_PAIR));
+				socket_start(argv[1],argv[2],argv[3]);
+			}
 		}
 	}
+	wattroff(chat_win,COLOR_PAIR(GREEN_PAIR));
+	wattroff(input_win,COLOR_PAIR(GREEN_PAIR));
+	endwin();
 	close(sock_fd);
     pthread_join(in_tid, NULL);
     pthread_join(out_tid, NULL);

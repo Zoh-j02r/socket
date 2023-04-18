@@ -2,7 +2,9 @@
 
 struct sockaddr_in address;
 int addrlen = sizeof(address);
-int16_t server_fd,conn_max,conn_count = 0;
+int16_t server_fd;
+int max_number_clients;
+
 
 typedef struct
 {
@@ -42,19 +44,24 @@ void socket_setup(int port)
 
 }
 
+void mission_begin()
+{
+
+}
+
 void *message_handler(void *arg)
 {
 	Client* client = (Client*) arg;
 	char aux_buffer[MAX_MESSAGE_SIZE + MAX_CLIENT_NAME_SIZE + 3] = {0};
 	while(1)
 	{
-		for (int i = 0; i < conn_max + 1 ; i++)
+		for (int i = 0; i < max_number_clients - 1; i++)
 		{
 			if (client[i].sock != 0)
 			{
 				if (strlen(client[i].buffer) != 0) 
 				{
-					for (int j = 0; j < conn_max + 1 ; j++)
+					for (int j = 0; j < max_number_clients - 1; j++)
 					{
 						sprintf(aux_buffer,"%s: %s",client[i].name,client[i].buffer);
 						send(client[j].sock, aux_buffer, strlen(aux_buffer), 0);
@@ -79,7 +86,6 @@ void *client_thread(void *arg) {
         if (valread == 0) 
 		{
         	printf("[I] Lost connection with %s\n", client->name);
-			conn_count--;
 			break;
         }
 	}
@@ -93,9 +99,9 @@ int main(int argc, char const *argv[])
 {
 	pthread_t messaging;
     socket_setup(atoi(argv[1]));
-	Client client[atoi(argv[2])];
-	conn_max = atoi(argv[2]) - 1;
-	for (int i = 0;  i < conn_max; i++)
+	max_number_clients = atoi(argv[2]);
+	Client client[max_number_clients - 1];
+	for (int i = 0;  i < max_number_clients - 1; i++)
 	{ 
 		client[i].sock = 0;
 		memset(client[i].buffer, 0, sizeof(client[i].buffer));
@@ -103,11 +109,20 @@ int main(int argc, char const *argv[])
 	if (pthread_create(&messaging, NULL, message_handler,&client) != 0) {
 	    printf("[E] Thread creation error \n");
 	    return -1;
-	} 
-    while (1){
-		if (conn_count < conn_max + 1)
-		{
-			if ((client[conn_count].sock = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0)
+	}
+	
+	int avail = 0;
+    while (1)
+	{
+			for (int i = 0;  i < max_number_clients - 1; i++)
+			{
+				if(client[i].sock == 0)
+				{
+					avail = i;
+				}
+   			}
+			
+			if ((client[avail].sock = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0)
 			{
 				perror("[E] Could not accept client");
 				exit(EXIT_FAILURE);
@@ -115,25 +130,21 @@ int main(int argc, char const *argv[])
 			else
 			{
 				char client_name[12];
-				read(client[conn_count].sock, client_name, 12);
-				printf("[W] The client below is the client: %d of %d\n",conn_count + 1,conn_max + 1);
+				read(client[avail].sock, client_name, 12);
     		    printf("[I] New client connected: %s - %s:%d\n", client_name, inet_ntoa(address.sin_addr), ntohs(address.sin_port));
-				strncpy(client[conn_count].name, client_name, sizeof(client[conn_count].name) - 1);
-				client[conn_count].name[sizeof(client[conn_count].name) - 1] = '\0'; 
-    			if (pthread_create(&client[conn_count].messaging, NULL, client_thread,(void*) &client[conn_count]) != 0) {
+				strncpy(client[avail].name, client_name, sizeof(client[avail].name) - 1);
+				client[avail].name[sizeof(client[avail].name) - 1] = '\0'; 
+    			
+				if (pthread_create(&client[avail].messaging, NULL, client_thread,(void*) &client[avail]) != 0) {
     			    printf("[E] Thread creation error \n");
     			    return -1;
-    			} 
-				else 
-				{
-					conn_count++;
-				} 
+    			}
+
 			} 
-    	}
 	}
 
     close(server_fd);
-	for (uint16_t i = 0;  i < conn_max; i++) {
+	for (uint16_t i = 0;  i < max_number_clients - 1; i++) {
     	pthread_join(client[i].messaging, NULL);
  	}
     return 0;
