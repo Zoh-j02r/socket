@@ -9,8 +9,7 @@ project(
 )
 
 curses = dependency('ncursesw')
-#pthread = dependency('pthread')
+threads = dependency('threads')
 
-executable('client', 'src/client.c', dependencies: curses)
-executable('serial', 'src/serial_client.c', dependencies: curses)
-executable('server','src/server.c')
+executable('client', 'src/client.c', dependencies: [curses,threads])
+executable('server','src/server.c',dependencies:threads)
