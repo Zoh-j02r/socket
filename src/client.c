@@ -145,7 +145,7 @@ void* input_win_thread(void* arg)
 		if (ch == '\n') 
     	{
 			lok = 1;
-			wait(2,input_win,GREEN_PAIR);
+			wait(56,input_win,GREEN_PAIR);
 			msg++;
 			if (msg > row - 6 )
 			{
